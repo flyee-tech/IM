@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peiel.im.mapper.ContactMapper">
+
+    <select id="getContactListByUserId" resultType="com.peiel.im.model.ContactDO">
+        SELECT c.`id`,
+               c.`owner_user_id` AS ownerUserId,
+               c.`other_user_id` AS otherUserId,
+               u.`name` as otherUserName,
+               u.`img_url` as otherImgUrl,
+               c.`msg_id` AS msgId,
+               msg.`content` AS content,
+               c.`type`,
+               c.`updated_date` AS updatedDate
+        FROM `contact` AS c
+        LEFT JOIN msg ON msg.id = c.msg_id
+        LEFT JOIN `user` as u ON u.id = c.other_user_id
+        WHERE c.`owner_user_id` = #{userId}
+        order by c.updated_date desc;
+    </select>
+
+</mapper>
