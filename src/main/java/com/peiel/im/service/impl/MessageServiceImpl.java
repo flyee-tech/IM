@@ -64,6 +64,11 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public List<MessageVO> queryIncrOneByOneMsg(Long userId, Long otherUserId, Long lastMsgId) {
+        // 触发未读数清除操作
+        Object old_unread = template.opsForHash().get(userId + "_KEY", otherUserId + "_S");
+        template.opsForHash().put(userId + "_KEY", otherUserId + "_S", "0");
+        template.opsForValue().decrement(userId + "_T", old_unread != null ? Long.parseLong(old_unread + "") : 0);
+
         List<MsgIndexDO> list = msgIndexMapper.selectList(Wrappers.lambdaQuery(new MsgIndexDO())
                 .eq(MsgIndexDO::getOwnerUserId, userId)
                 .eq(MsgIndexDO::getOtherUserId, otherUserId)
