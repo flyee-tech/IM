@@ -29,8 +29,6 @@ function bind() { //上线
             var bindJson = '{ "type": 1, "data": {"uid":' + $("#sender_id").val() + ' }}';
             websocket.send(bindJson);
         }
-    } else {
-        return;
     }
 }
 
@@ -65,7 +63,13 @@ var onmsg = function (event) {
     }
 };
 
+var i = 0;
+
 function reconnect() {
+    i++;
+    if (i > 5) {
+        return;
+    }
     websocket = new WebSocket("ws://127.0.0.1:8080");
     $("#ws_status").text("重新上线");
     websocket.onmessage = function (event) {

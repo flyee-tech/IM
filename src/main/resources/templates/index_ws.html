@@ -40,15 +40,15 @@
                 <th>操作</th>
                 </thead>
                 <tbody id="contactsBody" class="w-100">
-                <tr th:unless="${contactVO} == null" th:each=" contactInfo : ${contactVO.contactInfoList}"
-                    th:attr="chat_uid=${contactInfo.otherUid}">
-                    <td><img width="50px" th:src="@{'/images/'+${contactInfo.otherAvatar}}"/></td>
-                    <td th:text="${contactInfo.otherName}"></td>
+                <tr th:unless="${contactVO} == null" th:each=" contactInfo : ${contactVO.contactInfos}"
+                    th:attr="chat_uid=${contactInfo.userId}">
+                    <td><img width="50px" th:src="@{${contactInfo.imgUrl}}"/></td>
+                    <td th:text="${contactInfo.name}"></td>
                     <td th:text="${contactInfo.content}"></td>
-                    <td th:text="${contactInfo.convUnread}"></td>
+                    <td th:text="${contactInfo.hisUnread}"></td>
                     <td>
                         <button type="button" class="btn btn-info" data-toggle="modal" data-target="#chatModal"
-                                th:attr="data-recipient_id=${contactInfo.otherUid},data-recipient_name=${contactInfo.otherName}">
+                                th:attr="data-recipient_id=${contactInfo.userId},data-recipient_name=${contactInfo.name}">
                             和他聊天
                         </button>
                     </td>
@@ -60,15 +60,15 @@
 
     <div class="col-xs-6 w-50">
         <h4 align="center" class="w-50 sub-header pl-5">所有联系人</h4>
-        <input hidden="true" id="sender_id" th:if="${loginUserDO} != null" th:value="${loginUserDO.uid}"/>
+        <input hidden="true" id="sender_id" th:if="${loginUserDO} != null" th:value="${loginUserDO.id}"/>
         <input hidden="true"
                id="sender_name"
                th:if="${loginUserDO} != null"
-               th:value="${loginUserDO.username}"/>
+               th:value="${loginUserDO.name}"/>
         <input hidden="true"
                id="sender_avatar"
                th:if="${loginUserDO} != null"
-               th:value="${loginUserDO.avatar}"/>
+               th:value="${loginUserDO.imgUrl}"/>
         <div class="table-responsive text-center pl-5">
             <table class="table table-hover table-bordered w-50">
                 <thead class="w-50 bg-success">
@@ -78,11 +78,11 @@
                 </thead>
                 <tbody class="w-75">
                 <tr th:if="${userDO} != null" th:each=" userDO : ${otherUserDOS}">
-                    <td><img width="50px" th:src="@{'/images/'+${userDO.avatar}}"/></td>
-                    <td th:text="${userDO.username}"></td>
+                    <td><img width="50px" th:src="@{${userDO.imgUrl}}"/></td>
+                    <td th:text="${userDO.name}"></td>
                     <td>
                         <button type="button" class="btn btn-info" data-toggle="modal" data-target="#chatModal"
-                                th:attr="data-recipient_id=${userDO.uid},data-recipient_name=${userDO.username}">和他聊天
+                                th:attr="data-recipient_id=${userDO.id},data-recipient_name=${userDO.name}">和他聊天
                         </button>
                     </td>
                 </tr>

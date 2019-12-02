@@ -13,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.servlet.http.HttpSession;
@@ -57,18 +58,17 @@ public class UserController {
         }
     }
 
-//    @RequestMapping(path = "/ws")
-//    public String ws(Model model, HttpSession session) {
-//        UserDO loginUser = (UserDO)session.getAttribute(Constants.SESSION_KEY);
-//        model.addAttribute("loginUser", loginUser);
-//        List<UserDO> otherUsers = userService.getAllUsersExcept(loginUser);
-//        model.addAttribute("otherUsers", otherUsers);
-//
-//        MessageContactVO contactVO = userService.getContacts(loginUser);
-//        model.addAttribute("contactVO", contactVO);
-//        return "index_ws";
-//    }
-//
+    @RequestMapping(path = "/ws")
+    public String ws(Model model, HttpSession session) {
+        UserDO loginUser = (UserDO)session.getAttribute(Constants.SESSION_KEY);
+        model.addAttribute("loginUserDO", loginUser);
+        List<UserDO> otherUsers = userService.getAllUsersExcept(loginUser);
+        model.addAttribute("otherUserDOS", otherUsers);
+
+        MessageContactVO contactVO = userService.getContacts(loginUser);
+        model.addAttribute("contactVO", contactVO);
+        return "index_ws";
+    }
 
     @GetMapping("/logout")
     public String logout(HttpSession session) {
