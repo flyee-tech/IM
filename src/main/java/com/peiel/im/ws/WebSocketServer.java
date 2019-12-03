@@ -2,10 +2,7 @@ package com.peiel.im.ws;
 
 import com.peiel.im.ws.handler.WebSocketHandle;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -40,7 +37,26 @@ public class WebSocketServer {
                 .channel(NioServerSocketChannel.class)
                 .handler(new LoggingHandler(LogLevel.INFO))
                 .childHandler(new ChannelInitializerHandler());
-        final ChannelFuture channelFuture = serverBootstrap.bind(new InetSocketAddress(8080)).sync();
+        ChannelFuture channelFuture = serverBootstrap.bind(new InetSocketAddress(8080)).sync();
+
+        channelFuture.awaitUninterruptibly();
+
+        log.info(String.valueOf(channelFuture.isDone()));
+
+        if (channelFuture.isCancelled()) {
+            log.info("Connection attempt cancelled by user");
+        } else if (!channelFuture.isSuccess()) {
+            channelFuture.cause().printStackTrace();
+        } else {
+            log.info("WebSocketServer - Start completed");
+        }
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Runtime.getRuntime().addShutdownHook execute");
+            bossGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
+        }));
+
         new Thread(() -> {
             try {
                 channelFuture.channel().closeFuture().sync();
@@ -48,12 +64,12 @@ public class WebSocketServer {
                 e.printStackTrace();
             }
         }).start();
-        log.info("WebSocketServer - Start completed");
+
     }
 
     private static class ChannelInitializerHandler extends ChannelInitializer<SocketChannel> {
         @Override
-        protected void initChannel(SocketChannel ch) throws Exception {
+        protected void initChannel(SocketChannel ch) {
             ChannelPipeline pipeline = ch.pipeline();
             //websocket协议本身是基于http协议的，所以这边也要使用http解编码器
             pipeline.addLast(new HttpServerCodec());
