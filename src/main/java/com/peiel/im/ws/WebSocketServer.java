@@ -12,7 +12,9 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -26,6 +28,9 @@ import java.net.InetSocketAddress;
 @Slf4j
 @Component
 public class WebSocketServer {
+
+    @Autowired
+    private WebSocketHandle webSocketHandle;
 
     @PostConstruct
     public void start() throws InterruptedException {
@@ -67,7 +72,7 @@ public class WebSocketServer {
 
     }
 
-    private static class ChannelInitializerHandler extends ChannelInitializer<SocketChannel> {
+    private class ChannelInitializerHandler extends ChannelInitializer<SocketChannel> {
         @Override
         protected void initChannel(SocketChannel ch) {
             ChannelPipeline pipeline = ch.pipeline();
@@ -79,7 +84,8 @@ public class WebSocketServer {
             pipeline.addLast(new HttpObjectAggregator(1024 * 1024 * 1024));
             pipeline.addLast(new WebSocketServerProtocolHandler("/", null, true));
             //websocket定义了传递数据的6中frame类型
-            pipeline.addLast(new WebSocketHandle());
+            pipeline.addLast(webSocketHandle);
+//            pipeline.addLast(new IdleStateHandler(0, 0, 10));
         }
     }
 

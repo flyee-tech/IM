@@ -11,7 +11,7 @@ import com.peiel.im.model.UserDO;
 import com.peiel.im.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,7 +28,7 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserMapper mapper;
     @Autowired
-    private StringRedisTemplate template;
+    private RedisTemplate template;
     @Autowired
     private ContactMapper contactMapper;
 
@@ -63,8 +63,9 @@ public class UserServiceImpl implements UserService {
         }
 
         Long totalUnread = 0L;
-        String total = template.opsForValue().get(loginUserDO.getId() + "_T");
-        totalUnread = total != null ? Long.valueOf(total) : totalUnread;
+
+        Object total = template.opsForValue().get(loginUserDO.getId() + "_T");
+        totalUnread = total != null ? Long.valueOf(String.valueOf(total)) : totalUnread;
 
         MessageContactVO vo = new MessageContactVO();
         vo.setUserId(loginUserDO.getId());

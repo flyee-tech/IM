@@ -156,7 +156,7 @@ function queryMsg(event) {
     modal.find("#recipient_name").val(recipient_name);
     var sender_id = $("#sender_id").val();
 
-    var queryMsgJson = '{ "type": 2, "data": {"ownerUid":' + sender_id + ',"otherUid":' + recipient_id + ' }}';
+    var queryMsgJson = '{ "type": 2, "data": {"userId":' + sender_id + ',"otherUserId":' + recipient_id + ' }}';
     websocket.send(queryMsgJson);
 
     var tbodyID = $(event.relatedTarget).parent().parent().parent().attr("id");
@@ -183,34 +183,36 @@ function handleQueryMsgResp(resp) {
     if (jsonarray != "") {
         var ul_pane = $('.chat-thread');
         var owner_uid_avatar, other_uid_avatar;
-        $.each(jsonarray, function (i, msg) {
+        $.each(jsonarray, function (i, vo) {
             var li_msg = $('<li></li>');//创建一个li
-            var relation_type = msg.type;
-            var owner_uid = msg.ownerUid;
-            owner_uid_avatar = msg.ownerUidAvatar;
-            other_uid_avatar = msg.otherUidAvatar;
+            var relation_type = vo.msgIndex.type;
+            var owner_uid = vo.msgIndex.ownerUserId;
+            owner_uid_avatar = vo.ownerUser.imgUrl;
+            other_uid_avatar = vo.otherUser.imgUrl;
             if ((relation_type == 0) && (owner_uid == sender_id)) { //自己发的
                 li_msg.attr("id", "self-chat-li");
-                li_msg.text(msg.content);
-                li_msg.attr("mid", msg.mid);
-                li_msg.attr("other_uid", msg.otherUid);
-                li_msg.attr("create_time", msg.createTime);
-                li_msg.attr("avatar", 'url(/images/' + owner_uid_avatar + ')');
+                li_msg.text(vo.msg.content);
+                li_msg.attr("mid", vo.msg.id);
+                li_msg.attr("other_uid", vo.msgIndex.ownerUserId);
+                li_msg.attr("create_time", vo.msgIndex.createdDate);
+                li_msg.attr("avatar", 'url(' + owner_uid_avatar + ')');
+                li_msg.appendTo(ul_pane);
 
             } else if ((relation_type == 1) && (owner_uid == sender_id)) {//别人发的
                 li_msg.attr("id", "other-chat-li");
-                li_msg.text(msg.content);
-                li_msg.attr("mid", msg.mid);
-                li_msg.attr("other_uid", msg.ownerUid);
-                li_msg.attr("create_time", msg.createTime);
-                li_msg.attr("avatar", 'url(/images/' + owner_uid_avatar + ')');
+                li_msg.text(vo.msg.content);
+                li_msg.attr("mid", vo.msg.id);
+                li_msg.attr("other_uid", vo.msgIndex.otherUserId);
+                li_msg.attr("create_time", vo.msgIndex.createdDate);
+                li_msg.attr("avatar", 'url(' + other_uid_avatar + ')');
+                li_msg.appendTo(ul_pane);
             }
             ul_pane.append(li_msg);
 
         });
 
-        $("<style id='self-chat-li-style'>#self-chat-li:before{background-image:url('/images/" + owner_uid_avatar + "')}</style>").appendTo('head');
-        $("<style id='other-chat-li-style'>#other-chat-li:before{background-image:url('/images/" + other_uid_avatar + "')}</style>").appendTo('head');
+        $("<style id='self-chat-li-style'>#self-chat-li:before{background-image:url('" + owner_uid_avatar + "')}</style>").appendTo('head');
+        $("<style id='other-chat-li-style'>#other-chat-li:before{background-image:url('" + other_uid_avatar + "')}</style>").appendTo('head');
     }
 }
 

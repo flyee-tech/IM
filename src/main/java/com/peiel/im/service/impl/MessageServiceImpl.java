@@ -8,6 +8,7 @@ import com.peiel.im.model.*;
 import com.peiel.im.service.MessageService;
 import com.peiel.im.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +29,7 @@ public class MessageServiceImpl implements MessageService {
     @Autowired
     private MsgIndexMapper msgIndexMapper;
     @Autowired
-    private StringRedisTemplate template;
+    private RedisTemplate template;
     @Autowired
     private ContactMapper contactMapper;
 
