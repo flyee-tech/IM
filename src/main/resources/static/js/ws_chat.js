@@ -11,10 +11,13 @@ function init() {
         }
 
         websocket.onclose = function () {
+            console.log('onclose');
+            $("#ws_status").text("连接中断");
             reconnect();
         };
 
         websocket.onerror = function () {
+            console.log('onerror');
             reconnect();
         };
 
@@ -63,32 +66,38 @@ var onmsg = function (event) {
     }
 };
 
-var i = 0;
 
 function reconnect() {
-    i++;
-    if (i > 5) {
-        return;
-    }
-    websocket = new WebSocket("ws://127.0.0.1:8080");
-    $("#ws_status").text("重新上线");
-    websocket.onmessage = function (event) {
-        onmsg(event);
-    };
+    setTimeout(function () {
+        var isReconnect = false;
+        websocket = new WebSocket("ws://127.0.0.1:8080");
+        $("#ws_status").text("重新上线");
+        websocket.onmessage = function (event) {
+            onmsg(event);
+        };
 
-    websocket.onopen = function () {
-        bind();
-        heartBeat.start();
-    }
+        websocket.onopen = function () {
+            bind();
+            heartBeat.start();
+        }
 
-    websocket.onclose = function () {
-        reconnect();
-    };
+        websocket.onclose = function () {
+            $("#ws_status").text("连接中断");
+            if (!isReconnect) {
+                console.log('onclose1');
+                reconnect();
+                isReconnect = true;
+            }
+        };
 
-    websocket.onerror = function () {
-        reconnect();
-    };
-
+        websocket.onerror = function () {
+            if (!isReconnect) {
+                console.log('onerror1');
+                reconnect();
+                isReconnect = true;
+            }
+        };
+    }, 5000);
 }
 
 function sendMsg(event) {
