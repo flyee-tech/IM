@@ -1,6 +1,8 @@
 # IM
 A IM demo!
 
+> 参考：https://github.com/coldwalker/Sample
+
 ## 计划
 
 - 长链接
