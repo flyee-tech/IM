@@ -82,7 +82,7 @@ public class UserServiceImpl implements UserService {
             info.setType(contactDO.getType());
             info.setMid(contactDO.getMsgId());
             info.setContent(contactDO.getContent());
-            info.setHisUnread(unread != null ? Long.parseLong((String) unread) : 0L);
+            info.setHisUnread(unread != null ? Long.parseLong(""+unread) : 0L);
             vo.appendContactInfo(info);
         });
 

@@ -27,7 +27,7 @@ public class ImApplication extends SpringBootServletInitializer {
     public RedisTemplate redisTemplate(RedisConnectionFactory redisConnectionFactory) {
         RedisTemplate template = new RedisTemplate<>();
         template.setConnectionFactory(redisConnectionFactory);
-        template.setValueSerializer(new FastJsonRedisSerializer<>(Object.class));
+        template.setDefaultSerializer(new FastJsonRedisSerializer<>(Object.class));
         return template;
     }
 

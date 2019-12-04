@@ -40,6 +40,7 @@ var onmsg = function (event) {
     if (event != '') {
         heartBeat.reset();
         var resp = $.parseJSON(event.data);
+        console.log(resp);
         if (resp != null) {
             switch (resp.type) {
                 case 1:
@@ -106,7 +107,7 @@ function sendMsg(event) {
     var msg_content = $("#message-text").val();
     var sender_id = $("#sender_id").val();
     $("#message-text").val("");
-    var sendMsgJson = '{ "type": 3, "data": {"senderUid":' + sender_id + ',"recipientUid":' + recipient_id + ', "content":"' + msg_content + '","msgType":1  }}';
+    var sendMsgJson = '{ "type": 3, "data": {"userId":' + sender_id + ',"otherUserId":' + recipient_id + ', "content":"' + msg_content + '","msgType":1  }}';
     websocket.send(sendMsgJson);
     return false;
 }
@@ -220,14 +221,15 @@ function handleQueryMsgResp(resp) {
 //处理发消息的发送方的响应
 function handleSendMsgResp(resp) {
     var jsonContent = resp.data;
+    console.log(jsonContent)
     var sender_avatar = $("#sender_avatar").val();
     var ul_pane = $('.chat-thread');
     var li_current = $('<li></li>');//创建一个li
     li_current.attr("id", "self-chat-li");
-    li_current.text(jsonContent.content);
-    li_current.attr("mid", jsonContent.mid);
-    li_current.attr("other_uid", jsonContent.otherUid);
-    li_current.attr("create_time", jsonContent.createTime);
+    li_current.text(jsonContent.msg.content);
+    li_current.attr("mid", jsonContent.msg.id);
+    li_current.attr("other_uid", jsonContent.otherUser.id);
+    li_current.attr("create_time", jsonContent.msgIndex.createdDate);
     li_current.attr("avatar", 'url(/images/' + sender_avatar + ')');
     ul_pane.append(li_current);
     $('.chat-thread').animate({scrollTop: $('.chat-thread').prop("scrollHeight")}, 10);
@@ -238,27 +240,27 @@ function handleSendMsgResp(resp) {
     if (currentContactsTR) {
         $.each(currentContactsTR, function (i, contactTR) {
             var chat_uid = $(contactTR).attr("chat_uid");
-            if (chat_uid == jsonContent.otherUid) {
-                $(contactTR).children(":nth-child(3)").text(jsonContent.content);
+            if (chat_uid == jsonContent.otherUser.id) {
+                $(contactTR).children(":nth-child(3)").text(jsonContent.msg.content);
                 flag1 = true;
             }
         });
     }
 
     if (flag1 == false) {
-        var td_images = "<td><img width='50px' src='/images/" + jsonContent.otherUidAvatar + "'/></td>";
-        var td_otherName = "<td>" + jsonContent.otherName + "</td>";
-        var td_content = "<td>" + jsonContent.content + "</td>";
+        var td_images = "<td><img width='50px' src='" + jsonContent.otherUser.imgUrl + "'/></td>";
+        var td_otherName = "<td>" + jsonContent.otherUser.name + "</td>";
+        var td_content = "<td>" + jsonContent.msg.content + "</td>";
         var td_convUnread = "<td>0</td>";
-        var td_button = "<td><button type='button' class='btn btn-info' data-toggle='modal' data-target='#chatModal' data-recipient_id='" + jsonContent.otherUid + "' data-recipient_name='" + jsonContent.otherName + "'>和他聊天</button></td>";
-        var tr_html = "<tr chat_uid='" + jsonContent.otherUid + "'>" + td_images + td_otherName + td_content + td_convUnread + td_button + "</tr>";
+        var td_button = "<td><button type='button' class='btn btn-info' data-toggle='modal' data-target='#chatModal' data-recipient_id='" + jsonContent.otherUser.id + "' data-recipient_name='" + jsonContent.otherUser.name + "'>和他聊天</button></td>";
+        var tr_html = "<tr chat_uid='" + jsonContent.otherUser.id + "'>" + td_images + td_otherName + td_content + td_convUnread + td_button + "</tr>";
         $("#contactsBody").prepend(tr_html);
     }
 }
 
 //处理接收到的推送消息，主要是最近联系人界面和聊天界面的展示
 function handleReceivedMsg(pushedMsg) {
-    var jsonRecipient = pushedMsg.data;
+    var jsonRecipient= pushedMsg.data;
     var tid = pushedMsg.tid;
     if (tid != "") {
         var ackJson = '{ "type": 6, "data": {"tid":' + tid + ' }}';
@@ -268,19 +270,19 @@ function handleReceivedMsg(pushedMsg) {
     var li_current = $('<li></li>');//创建一个li
     var flag2 = false;
     li_current.attr("id", "other-chat-li");
-    li_current.text(jsonRecipient.content);
-    li_current.attr("mid", jsonRecipient.mid);
-    li_current.attr("other_uid", jsonRecipient.ownerUid);
-    li_current.attr("create_time", jsonRecipient.createTime);
-    li_current.attr("avatar", 'url(/images/' + jsonRecipient.ownerUidAvatar + ')');
+    li_current.text(jsonRecipient.msg.content);
+    li_current.attr("mid", jsonRecipient.msg.id);
+    li_current.attr("other_uid", jsonRecipient.ownerUser.id);
+    li_current.attr("create_time", jsonRecipient.msgIndex.createdDate);
+    li_current.attr("avatar", 'url(' + jsonRecipient.ownerUser.imgUrl + ')');
     ul_pane.append(li_current);
     $('.chat-thread').animate({scrollTop: $('.chat-thread').prop("scrollHeight")}, 10);
 
     var currentContactsTR = $("#contactsBody tr");
     $.each(currentContactsTR, function (i, contactTR) {
         var chat_uid = $(contactTR).attr("chat_uid");
-        if (chat_uid == jsonRecipient.ownerUid) {
-            $(contactTR).children(":nth-child(3)").text(jsonRecipient.content);
+        if (chat_uid == jsonRecipient.ownerUser.id) {
+            $(contactTR).children(":nth-child(3)").text(jsonRecipient.msg.content);
             var unread = parseInt($(contactTR).children(":nth-child(4)").text());
             $(contactTR).children(":nth-child(4)").text(unread + 1);
             flag2 = true;
@@ -288,12 +290,12 @@ function handleReceivedMsg(pushedMsg) {
     });
 
     if (flag2 == false) {
-        var td_images = "<td><img width='50px' src='/images/" + jsonRecipient.ownerUidAvatar + "'/></td>";
-        var td_otherName = "<td>" + jsonRecipient.ownerName + "</td>";
-        var td_content = "<td>" + jsonRecipient.content + "</td>";
+        var td_images = "<td><img width='50px' src='" + jsonRecipient.ownerUser.imgUrl + "'/></td>";
+        var td_otherName = "<td>" + jsonRecipient.ownerUser.name + "</td>";
+        var td_content = "<td>" + jsonRecipient.msg.content + "</td>";
         var td_convUnread = "<td>1</td>";
-        var td_button = "<td><button type='button' class='btn btn-info' data-toggle='modal' data-target='#chatModal' data-recipient_id='" + jsonRecipient.ownerUid + "' data-recipient_name='" + jsonRecipient.ownerName + "'>和他聊天</button></td>";
-        var tr_html = "<tr chat_uid='" + jsonRecipient.ownerUid + "'>" + td_images + td_otherName + td_content + td_convUnread + td_button + "</tr>";
+        var td_button = "<td><button type='button' class='btn btn-info' data-toggle='modal' data-target='#chatModal' data-recipient_id='" + jsonRecipient.ownerUser.id + "' data-recipient_name='" + jsonRecipient.ownerUser.name + "'>和他聊天</button></td>";
+        var tr_html = "<tr chat_uid='" + jsonRecipient.ownerUser.id + "'>" + td_images + td_otherName + td_content + td_convUnread + td_button + "</tr>";
         $("#contactsBody").prepend(tr_html);
     }
 

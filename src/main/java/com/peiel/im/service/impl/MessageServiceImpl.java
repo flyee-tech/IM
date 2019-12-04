@@ -9,7 +9,6 @@ import com.peiel.im.service.MessageService;
 import com.peiel.im.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -43,7 +42,7 @@ public class MessageServiceImpl implements MessageService {
     public List<MessageVO> queryOneByOneMsg(Long userId, Long otherUserId) {
         // 清除未读数
         Object old_unread = template.opsForHash().get(userId + "_KEY", otherUserId + "_S");
-        template.opsForHash().put(userId + "_KEY", otherUserId + "_S", "0");
+        template.opsForHash().put(userId + "_KEY", otherUserId + "_S", 0);
         template.opsForValue().decrement(userId + "_T", old_unread != null ? Long.parseLong(old_unread + "") : 0);
 
         List<MsgIndexDO> list = msgIndexMapper.selectList(Wrappers.lambdaQuery(new MsgIndexDO())
@@ -67,7 +66,7 @@ public class MessageServiceImpl implements MessageService {
     public List<MessageVO> queryIncrOneByOneMsg(Long userId, Long otherUserId, Long lastMsgId) {
         // 触发未读数清除操作
         Object old_unread = template.opsForHash().get(userId + "_KEY", otherUserId + "_S");
-        template.opsForHash().put(userId + "_KEY", otherUserId + "_S", "0");
+        template.opsForHash().put(userId + "_KEY", otherUserId + "_S", 0);
         template.opsForValue().decrement(userId + "_T", old_unread != null ? Long.parseLong(old_unread + "") : 0);
 
         List<MsgIndexDO> list = msgIndexMapper.selectList(Wrappers.lambdaQuery(new MsgIndexDO())
@@ -112,7 +111,12 @@ public class MessageServiceImpl implements MessageService {
         // 新增总未读和单未读
         template.opsForValue().increment(otherUserId + "_T");
         template.opsForHash().increment(otherUserId + "_KEY", userId + "_S", 1);
-        return MessageVO.builder().msg(msg).msgIndex(msgIndex).build();
+        return MessageVO.builder()
+                .msg(msg)
+                .msgIndex(msgIndex)
+                .ownerUser(userService.selectById(userId))
+                .otherUser(userService.selectById(otherUserId))
+                .build();
     }
 
 }
