@@ -37,7 +37,7 @@ function bind() { //上线
 
 //处理所有web端接收到的数据
 var onmsg = function (event) {
-    if (event != '') {
+    if (event !== '' && event.data !== '') {
         heartBeat.reset();
         var resp = $.parseJSON(event.data);
         console.log(resp);
@@ -72,7 +72,6 @@ function reconnect() {
     setTimeout(function () {
         var isReconnect = false;
         websocket = new WebSocket("ws://127.0.0.1:8080");
-        $("#ws_status").text("重新上线");
         websocket.onmessage = function (event) {
             onmsg(event);
         };
@@ -221,7 +220,6 @@ function handleQueryMsgResp(resp) {
 //处理发消息的发送方的响应
 function handleSendMsgResp(resp) {
     var jsonContent = resp.data;
-    console.log(jsonContent)
     var sender_avatar = $("#sender_avatar").val();
     var ul_pane = $('.chat-thread');
     var li_current = $('<li></li>');//创建一个li
@@ -303,8 +301,7 @@ function handleReceivedMsg(pushedMsg) {
 
 //处理轮询总未读的响应
 function handleLoopUnreadResp(resp) {
-    var totalUnreadData = resp.data;
-    $("#totalUnread").text(totalUnreadData.unread);
+    $("#totalUnread").text(resp.data);
 }
 
 

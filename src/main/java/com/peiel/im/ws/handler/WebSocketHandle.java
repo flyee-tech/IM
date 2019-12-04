@@ -31,7 +31,6 @@ public class WebSocketHandle extends SimpleChannelInboundHandler<Object> {
             String text = ((TextWebSocketFrame) msg).text();
             log.info("收到消息：" + text);
             String resp = parser.parse(ctx.channel(), text);
-            log.info(resp);
             ctx.channel().writeAndFlush(new TextWebSocketFrame(resp));
         } else if (msg instanceof BinaryWebSocketFrame) {
             log.info("收到二进制消息：" + ((BinaryWebSocketFrame) msg).content().readableBytes());

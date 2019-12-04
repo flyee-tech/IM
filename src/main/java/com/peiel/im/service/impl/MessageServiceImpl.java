@@ -1,12 +1,15 @@
 package com.peiel.im.service.impl;
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.peiel.im.Constants;
 import com.peiel.im.mapper.ContactMapper;
 import com.peiel.im.mapper.MsgIndexMapper;
 import com.peiel.im.mapper.MsgMapper;
 import com.peiel.im.model.*;
 import com.peiel.im.service.MessageService;
 import com.peiel.im.service.UserService;
+import com.peiel.im.ws.WebsocketServerMsgParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,8 @@ public class MessageServiceImpl implements MessageService {
     private RedisTemplate template;
     @Autowired
     private ContactMapper contactMapper;
+    @Autowired
+    private WebsocketServerMsgParser wsParser;
 
     @Override
     public MessageContactVO getContacts(Long userId) {
@@ -41,9 +46,7 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public List<MessageVO> queryOneByOneMsg(Long userId, Long otherUserId) {
         // 清除未读数
-        Object old_unread = template.opsForHash().get(userId + "_KEY", otherUserId + "_S");
-        template.opsForHash().put(userId + "_KEY", otherUserId + "_S", 0);
-        template.opsForValue().decrement(userId + "_T", old_unread != null ? Long.parseLong(old_unread + "") : 0);
+        clearUnread(userId, otherUserId);
 
         List<MsgIndexDO> list = msgIndexMapper.selectList(Wrappers.lambdaQuery(new MsgIndexDO())
                 .eq(MsgIndexDO::getOwnerUserId, userId)
@@ -65,9 +68,7 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public List<MessageVO> queryIncrOneByOneMsg(Long userId, Long otherUserId, Long lastMsgId) {
         // 触发未读数清除操作
-        Object old_unread = template.opsForHash().get(userId + "_KEY", otherUserId + "_S");
-        template.opsForHash().put(userId + "_KEY", otherUserId + "_S", 0);
-        template.opsForValue().decrement(userId + "_T", old_unread != null ? Long.parseLong(old_unread + "") : 0);
+        clearUnread(userId, otherUserId);
 
         List<MsgIndexDO> list = msgIndexMapper.selectList(Wrappers.lambdaQuery(new MsgIndexDO())
                 .eq(MsgIndexDO::getOwnerUserId, userId)
@@ -109,14 +110,33 @@ public class MessageServiceImpl implements MessageService {
         }
 
         // 新增总未读和单未读
-        template.opsForValue().increment(otherUserId + "_T");
-        template.opsForHash().increment(otherUserId + "_KEY", userId + "_S", 1);
+        addUnread(userId, otherUserId);
         return MessageVO.builder()
                 .msg(msg)
                 .msgIndex(msgIndex)
                 .ownerUser(userService.selectById(userId))
                 .otherUser(userService.selectById(otherUserId))
                 .build();
+    }
+
+    private void addUnread(Long userId, Long otherUserId) {
+        template.opsForValue().increment(otherUserId + "_T");
+        template.opsForHash().increment(otherUserId + "_KEY", userId + "_S", 1);
+        pushUnread(otherUserId);
+    }
+
+    private void clearUnread(Long userId, Long otherUserId) {
+        Object old_unread = template.opsForHash().get(userId + "_KEY", otherUserId + "_S");
+        template.opsForHash().put(userId + "_KEY", otherUserId + "_S", 0);
+        template.opsForValue().decrement(userId + "_T", old_unread != null ? Long.parseLong(old_unread + "") : 0);
+        pushUnread(userId);
+    }
+
+    private void pushUnread(Long userId) {
+        JSONObject resp = new JSONObject();
+        resp.put("type", Constants.WS_MES_TYPE_UNREAD);
+        resp.put("data", template.opsForValue().get(userId + "_T"));
+        wsParser.receiveMsg(userId, resp.toJSONString());
     }
 
 }
